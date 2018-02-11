@@ -1,0 +1,32 @@
+{
+    "data_path": "/Users/huzhenghui/tmp/brickmover",
+    "is_simulation": true,
+    "exchanges": {
+        "btcchina": {
+            "access_key": "",
+            "secret_key": "" ,
+            "user_name": "",
+            "password": "",
+            "trade_password": "",
+            "trade_fee": 0.0
+        },
+
+        "okcoin": {
+            "access_key": "12286b46-2878-48d7-a25a-f2edc8ef5821",
+            "secret_key": "90CF8D49D726F798BB13A227EEC6A9BC",
+            "user_name": "15521194577",
+            "password": "huzhenghui0671",
+            "trade_password": "0gX%fi6u",
+            "trade_fee": 0.0
+        }
+    },
+
+    "wallet": {
+        "uerid": "",
+        "password": ""
+    },
+
+    "qty_per_order": 0.01,
+    "profit_rate_threshold": 0.01,
+    "trade_interval": 45
+}
