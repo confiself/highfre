@@ -3,30 +3,68 @@ import requests
 import time
 import re
 import json
+import datetime
+import os
 
-def get_history(start_time, stop_time,reso):
-    """
-    获取从2017年6月起的数据
-    :return:
-    """
-    start_time = time.mktime(time.strptime('2018-02-11 00:00:00', '%Y-%m-%d %H:%M:%S'))
+
+def get_history(start_date, reso):
+    start_time = str(start_date) + ' 00:00:01'
+    start_time = time.mktime(time.strptime(start_time, '%Y-%m-%d %H:%M:%S'))
     start_time = re.sub('\..*', '', str(start_time))
-    stop_time = re.sub('\..*', '', str(time.time()))
-    print(str(start_time))
-    print(stop_time)
-    resp = requests.get(verify=False,
-        url='https://www.bitmex.com/api/udf/history?symbol=XBTUSD&resolution={}&from={}&to={}'.format(reso, start_time,
-                                                                                                    stop_time))
-    # resp = dict(resp.text)
-    # print(resp)
-    # print(resp.keys())
-    print(resp.text)
-    result = json.loads(resp.text)
-    print(result.keys())
 
-def get_minute():
+    stop_time = str(start_date) + ' 23:59:59'
+    stop_time = time.mktime(time.strptime(stop_time, '%Y-%m-%d %H:%M:%S'))
+    stop_time = re.sub('\..*', '', str(stop_time))
+
+    def _get():
+        try:
+            resp = requests.get(verify=False,
+
+                                url='https://www.bitmex.com/api/udf/history?symbol=XBTUSD&resolution={}&from={}&to={}'.format(
+                                    reso, start_time,
+                                    stop_time))
+            result_dict = json.loads(resp.text)
+            if 'error' in resp.text:
+                print(resp.text)
+                return None
+            if 'c' in result_dict and len(result_dict['c']) > 1:
+                result_dict['resolution'] = reso
+                return result_dict
+        except:
+            print('get error, retry after 3 seconds ...')
+            return None
+        return None
+    max_retry_times = 1
+    while max_retry_times > 0:
+        result = _get()
+        if result:
+            return result
+        time.sleep(5)
+        max_retry_times -= 1
+    return None
 
 
-
+def get_data_by_day(start, end):
+    date_start = datetime.datetime.strptime(start, '%Y-%m-%d')
+    date_end = datetime.datetime.strptime(end, '%Y-%m-%d')
+    while date_start <= date_end:
+        crawl_date = date_start.strftime('%Y-%m-%d')
+        date_start += datetime.timedelta(days=1)
+        file_path = os.path.join('/opt/app/data/bitmex', str(crawl_date))
+        if os.path.exists(file_path):
+            continue
+        print(file_path)
+        _data_list = []
+        resolution_list = ['1', '5', '60']
+        for resolution in resolution_list:
+            _data = get_history(crawl_date, resolution)
+            if not _data:
+                break
+            _data_list.append(_data)
+        if len(_data_list) == len(resolution_list):  # 只有全部采采集完整才保存，否则跳过
+            with open(file_path, 'w') as f:
+                for _data in _data_list:
+                    f.writelines(json.dumps(_data, ensure_ascii=False) + '\n')
 if __name__ == '__main__':
-    get_history()
+    # get_history()
+    get_data_by_day(start='2017-06-01', end='2018-02-11')
