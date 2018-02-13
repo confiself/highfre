@@ -1,5 +1,5 @@
 #!/bin/python
-#encoding: utf-8
+# encoding: utf-8
 
 import os, sys
 import time
@@ -12,19 +12,19 @@ import config
 
 from info import *
 import models
-from advisor import Advisor
+from advisor1 import Advisor
 from wallet import Wallet
 import exchanges
+from bitmex_etc import BitMexHttp
 
 _logger = logging.getLogger(__name__)
 
+
 class Trader:
-    _exchanges = exchanges.actived_exchanges 
 
     def __init__(self):
         self.current_order = None
-        self.wallet = Wallet()
-        self.qty_per_order = config.configuration['qty_per_order']
+        self.exc_http = BitMexHttp()
 
     def trade(self, suggest):
         self.current_suggestion = suggest
@@ -32,22 +32,14 @@ class Trader:
         self._make_orders(),
 
     def _create_order(self):
-        s = self.current_suggestion
-        session = models.Session()
-        order = models.Order(s.buy_account.name, s.buy_price, 
-                    s.sell_account.name, s.sell_price, s.stock_qty)
-        try:
-            session.add(order)
-            session.commit()
-            return order
-        except Exception as e:
-            _logger.error(e)
-            session.rollback()
+        real_time_info = self.exc_http.quote_get()
+        if not real_time_info:
             return None
+
 
     def _make_orders(self):
         '''下买卖委托单'''
-        #TODO 并行化处理
+        # TODO 并行化处理
         self._make_sell_order()
         self._make_buy_order()
         self._check_order_state()
@@ -63,12 +55,11 @@ class Trader:
             _logger.error(e)
             session.rollback()
 
-
     def _make_buy_order(self):
         buy_ex = Trader._exchanges[self.current_suggestion.buy_account.name]
         session = models.Session()
         try:
-            #buy_ex.buy(self.current_suggestion.stock_qty, self.current_suggestion.buy_price)
+            # buy_ex.buy(self.current_suggestion.stock_qty, self.current_suggestion.buy_price)
             self.current_order.bought_time = datetime.datetime.now()
             self.current_order.is_bought = True
             session.commit()
@@ -81,7 +72,7 @@ class Trader:
         sell_ex = Trader._exchanges[self.current_suggestion.sell_account.name]
         session = models.Session()
         try:
-            #sell_ex.sell(self.current_suggestion.stock_qty, self.current_suggestion.sell_price)
+            # sell_ex.sell(self.current_suggestion.stock_qty, self.current_suggestion.sell_price)
             self.current_order.sold_time = datetime.datetime.now()
             self.current_order.is_sold = True
             session.commit()
@@ -90,7 +81,6 @@ class Trader:
             _logger.error(e)
             session.rollback()
 
-    
     def _wait_balance(self):
         _logger.info('Waitig for balance...')
         time.sleep(1)
@@ -100,7 +90,7 @@ class Trader:
 
 
 class Cashier:
-    _exchanges = exchanges.actived_exchanges 
+    _exchanges = exchanges.actived_exchanges
 
     def __init__(self):
         self.wallet = Wallet()
@@ -118,14 +108,14 @@ class Cashier:
         wallet_balance = self.wallet.balance()
         if wallet_balance > self.qty_per_order:
             self.wallet.withdraw(sell_account.stock_deposit_address, self.qty_per_order)
-        buy_ex.withdraw_stock(self.qty_per_order)            
+        buy_ex.withdraw_stock(self.qty_per_order)
 
     def make_balance(self, accounts):
-        wallet_balance = self.wallet.balance()        
+        wallet_balance = self.wallet.balance()
         for a in accounts:
             if a.stock_balance < self.qty_per_order and wallet_balance > self.qty_per_order:
                 _logger.info('[CASHIER]\t\t Transfering BTC from wallet to account "{0}", qty={1}'
-                        .format(a.name, self.qty_per_order))
+                             .format(a.name, self.qty_per_order))
                 self.wallet.withdraw(a.stock_deposit_address, self.qty_per_order)
                 wallet_balance -= self.qty_per_order
 
@@ -133,8 +123,9 @@ class Cashier:
 def wait_event(event, seconds):
     for i in xrange(0, seconds):
         if event.is_set():
-            break            
+            break
         time.sleep(1)
+
 
 def main_loop(stop_event):
     the_advisor = Advisor()
@@ -146,7 +137,7 @@ def main_loop(stop_event):
             _logger.info(u'--------------------------- 交易处理开始 ---------------------------')
             accounts = the_advisor.request_accounts_info()
 
-            #cashier.make_balance(accounts)
+            # cashier.make_balance(accounts)
 
             s = the_advisor.evaluate(accounts)
             if stop_event.is_set():
@@ -155,7 +146,7 @@ def main_loop(stop_event):
                 print('trader()')
                 trader.trade(s)
                 print('post_transfers()')
-                #trader.post_transfers()
+                # trader.post_transfers()
                 print('\n')
             else:
                 _logger.info(u'交易条件不具备，等上一会儿....')

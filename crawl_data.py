@@ -7,22 +7,14 @@ import datetime
 import os
 
 
-def get_history(start_date, reso):
-    start_time = str(start_date) + ' 00:00:01'
-    start_time = time.mktime(time.strptime(start_time, '%Y-%m-%d %H:%M:%S'))
-    start_time = re.sub('\..*', '', str(start_time))
-
-    stop_time = str(start_date) + ' 23:59:59'
-    stop_time = time.mktime(time.strptime(stop_time, '%Y-%m-%d %H:%M:%S'))
-    stop_time = re.sub('\..*', '', str(stop_time))
-
+def get_history(crawl_start_time, crawl_stop_time, reso):
     def _get():
         try:
             resp = requests.get(verify=False,
 
                                 url='https://www.bitmex.com/api/udf/history?symbol=XBTUSD&resolution={}&from={}&to={}'.format(
-                                    reso, start_time,
-                                    stop_time))
+                                    reso, crawl_start_time,
+                                    crawl_stop_time))
             result_dict = json.loads(resp.text)
             if 'error' in resp.text:
                 print(resp.text)
@@ -57,7 +49,13 @@ def get_data_by_day(start, end):
         _data_list = []
         resolution_list = ['1', '5', '60']
         for resolution in resolution_list:
-            _data = get_history(crawl_date, resolution)
+            start_time = str(crawl_date) + ' 00:00:01'
+            start_time = time.mktime(time.strptime(start_time, '%Y-%m-%d %H:%M:%S'))
+            start_time = re.sub('\..*', '', str(start_time))
+            stop_time = str(crawl_date) + ' 23:59:59'
+            stop_time = time.mktime(time.strptime(stop_time, '%Y-%m-%d %H:%M:%S'))
+            stop_time = re.sub('\..*', '', str(stop_time))
+            _data = get_history(start_time, stop_time, resolution)
             if not _data:
                 break
             _data_list.append(_data)
@@ -67,4 +65,4 @@ def get_data_by_day(start, end):
                     f.writelines(json.dumps(_data, ensure_ascii=False) + '\n')
 if __name__ == '__main__':
     # get_history()
-    get_data_by_day(start='2017-06-01', end='2018-02-11')
+    get_data_by_day(start='2017-06-01', end='2018-02-13')
