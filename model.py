@@ -4,6 +4,8 @@ import crawl_data
 import re
 import numpy as np
 
+
+
 class Suggestion:
     def __init__(self, can_go, buy_price):
         self.buy_price = buy_price
@@ -11,6 +13,7 @@ class Suggestion:
         self.sell_less_price = buy_price * 1.01
         self.sell_less_price = buy_price * 0.99
         self.can_go = can_go
+
 
 class Advisor(object):
     def __init__(self):
