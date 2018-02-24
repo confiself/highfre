@@ -7,6 +7,9 @@ _logger = logging.getLogger(__name__)
 
 
 class Trader:
+    """
+    1 检测是否短期内处于震荡模式，以小时为单位，前几个
+    """
     def __init__(self, side):
         self.current_order = None
         self.etc_http = bitmex_etc.BitMexHttp(api_key="euYaAVNoDkTOnuJbIzdkbm2i",

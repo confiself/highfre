@@ -42,10 +42,9 @@ def get_data_by_day(start, end):
     while date_start <= date_end:
         crawl_date = date_start.strftime('%Y-%m-%d')
         date_start += datetime.timedelta(days=1)
-        file_path = os.path.join('/opt/app/data/bitmex', str(crawl_date))
+        file_path = os.path.join('/Users/huzhenghui/opt/app/data/bitmex', str(crawl_date))
         if os.path.exists(file_path):
             continue
-        print(file_path)
         _data_list = []
         resolution_list = ['1', '5', '60']
         for resolution in resolution_list:
@@ -65,4 +64,4 @@ def get_data_by_day(start, end):
                     f.writelines(json.dumps(_data, ensure_ascii=False) + '\n')
 if __name__ == '__main__':
     # get_history()
-    get_data_by_day(start='2017-06-01', end='2018-02-13')
+    get_data_by_day(start='2018-02-01', end='2018-02-15')

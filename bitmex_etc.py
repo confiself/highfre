@@ -3,20 +3,15 @@
 import bitmex
 import json
 from bitmex_websocket import BitMEXWebsocket
-import logging
 from time import sleep
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class Wallet(object):
     def __init__(self):
         pass
-
-
-class RealTimeInfo(object):
-    def __init__(self, bid_price, bid_size, ask_price):
-        self.bid_price = bid_price
-        self.bid_size = bid_size
-        self.ask_price = ask_price
 
 
 class BitMexHttp(object):
@@ -41,55 +36,95 @@ class BitMexHttp(object):
         self.symbol = symbol
 
     def quote_get(self):
-        result = self.client.Quote.Quote_get(symbol=self.symbol, count=1, reverse=True).result()
-        if result and len(result) > 0 and len(result[0]) > 0 \
-                and 'askPrice' in result[0][0]:
-            return RealTimeInfo(result[0][0]['bidPrice'], result[0][0]['bidSize'], result[0][0]['askPrice'])
+        try:
+            result = self.client.Quote.Quote_get(symbol=self.symbol, count=1, reverse=True).result()
+            if result and len(result) > 0 and len(result[0]) > 0 \
+                    and 'askPrice' in result[0][0]:
+                return result[0][0]
+        except:
+            _logger.error('net error')
+            pass
         return None
 
-    def order_new(self, order_qty, price):
+    def order_new(self):
         """
-        side:Order side. Valid options: Buy, Sell. Defaults to 'Buy' unless orderQty or simpleOrderQty is negative.
-        ordType Market
-        clOrdID string
-        side Buy, Sell.
-        pegOffsetValue 偏移价格 有正负
-        stopPx
+        ordType: Limit Market MarketWithLeftOverAsLimit Stop StopLimit MarketIfTouched LimitIfTouched
+        side: Buy Sell
+        return [{'price','orderID'}]
+        """
+        # 限价开仓
+        # resopnse = self.client.Order.Order_new(symbol=self.symbol,
+        #                                        orderQty=order_qty,
+        #                                        price=price).result()
+        # 以比特币计算 市价开仓,如果已经有反向合约，默认会减仓
+        # resopnse = self.client.Order.Order_new(symbol=self.symbol,
+        #                                        side='Sell',
+        #                                        ordType='Market',
+        #                                        simpleOrderQty=0.000001
+        #                                        ).result()
 
-        {"symbol":"XBTUSD","price":8010,"ordType":"Limit","execInst":"Close","text":"Position Close from www.bitmex.com"}
-        限价平仓
-        :param order_qty:
-        :param price:
-        :return:
-        """
-        resopnse = self.client.Order.Order_new(symbol=self.symbol, orderQty=order_qty, price=price).result()
-        order_id = resopnse[0]['orderID']
+        # 盈利后市价平仓,Close 全仓
+        # resopnse = self.client.Order.Order_new(symbol=self.symbol,
+        #                                        side='Buy',
+        #                                        ordType='MarketIfTouched',
+        #                                        execInst='Close',
+        #                                        stopPx=8825).result()
+        # 超过一定价格后止损
+        resopnse = self.client.Order.Order_new(symbol=self.symbol,
+                                               side='Buy',
+                                               ordType='Market',
+                                               execInst='Close',
+                                               ).result()
         print(resopnse)
 
+    def make_order(self, side, simple_order_qty):
+        response = self.client.Order.Order_new(symbol=self.symbol,
+                                               side=side,
+                                               simpleOrderQty=simple_order_qty,
+                                               ordType='Market').result()
+        if response and len(response) > 0 and 'orderID' in response[0]:
+            return response[0]
+        return None
+
+    def make_close_order(self, side, price):
+        response = self.client.Order.Order_new(symbol=self.symbol,
+                                               side=side,
+                                               price=price,
+                                               ordType='Limit',
+                                               execInst='Close').result()
+        if response and len(response) > 0 and 'orderID' in response[0]:
+            return response[0]
+        return None
+
     def get_orders(self):
-        resopnse = self.client.Order.Order_getOrders(symbol=self.symbol).result()
+        """
+        'ordStatus': 'Filled' 'new'
+        :return:
+        """
+        resopnse = self.client.Order.Order_getOrders(symbol=self.symbol, reverse=True, count=3, start=0).result()
+        # 'simpleLeavesQty': 0.0489
         print(resopnse)
 
     def get_wallet(self):
-        # https: // www.bitmex.com / api / v1 / user / walletHistory?count = 100 & start = 0 & reverse = true
-        # HTTP / 1.1
 
-        # list [{marginBalance}]
-        # {"transactID": "00000000-0000-0000-0000-000000000000",
-        #  "account": 269141, 账号编号
-        #  "currency": "XBt",
-        #  "transactType": "UnrealisedPNL",
-        #  "amount": -155200,未实现盈亏
-        #  "fee": 0,
-        #  "transactStatus": "Pending",
-        #  "address": "XBTUSD",
-        #  "transactTime": null,
-        #  "walletBalance": 743851, 钱包余额
-        #  "marginBalance": 588651, 保证金余额
-        #  "timestamp": null}
-        response = self.client.User.User_getWallet().result()
-        print(response[0])
-
+        # 'account': 269141,
+        # 'transactType': 'UnrealisedPNL',
+        # 'amount': -173200, 未实现盈亏
+        # 'fee': 0,
+        # 'transactStatus': 'Pending',
+        # 'address': 'XBTUSD',
+        # 'transactTime': None,
+        # 'walletBalance': 744321, 钱包余额
+        # 'marginBalance': 571121, 保证金余额
+        # 'timestamp': None,
+        # 'tx': None,
+        try:
+            response = self.client.User.User_getWalletHistory().result()
+            if response and len(response) > 0 and len(response) > 0 and 'amount' in response[0][0]:
+                return response[0][0]
+        except:
+            _logger.error('net error')
+        return None
 
     def order_amend(self, order_id, price):
         self.client.Order.Order_amend(orderID=order_id, price=price).result()
@@ -99,12 +134,57 @@ class BitMexHttp(object):
         # self.client.Order.Order_cancel(orderID=order_id).result()
 
     def order_cancel_all(self):
-        self.client.Order.Order_cancelAll().result()
+        # 取消所有未成交订单
+        try:
+            response = self.client.Order.Order_cancelAll().result()
+            if response and response[1].status_code == 200:
+                return True
+        except:
+            _logger.error('net error')
+        return False
 
     def instrument_get(self):
         # start=500
         # reverse = True
         self.client.Instrument.Instrument_get(filter=json.dumps({'rootSymbol': 'XBT'})).result()
+
+    def make_market_order(self, side, simple_order_qty):
+        try:
+            response = self.client.Order.Order_new(symbol=self.symbol,
+                                                   side=side,
+                                                   simpleOrderQty=simple_order_qty,
+                                                   ordType='Market').result()
+            if response and len(response) > 0 and 'orderID' in response[0]:
+                return response[0]
+        except:
+            _logger.error('net error')
+        return None
+
+    def make_stop_loss_order(self, side):
+        try:
+            response = self.client.Order.Order_new(symbol=self.symbol,
+                                                   side=side,
+                                                   ordType='Market',
+                                                   execInst='Close',
+                                                   ).result()
+            if response and len(response) > 0:
+                return response[0]
+        except:
+            _logger.error('net error')
+        return None
+
+    def make_stop_profit_order(self, side, price):
+        try:
+            response = self.client.Order.Order_new(symbol=self.symbol,
+                                                   side=side,
+                                                   ordType='MarketIfTouched',
+                                                   execInst='Close',
+                                                   stopPx=price).result()
+            if response and len(response) > 0:
+                return response
+        except:
+            _logger.error('net error')
+        return False
 
 
 class BitMexWS(object):
@@ -155,8 +235,11 @@ if __name__ == '__main__':
     # bitmex_ws = BitMexWS()
     # bitmex_ws.run()
     bm = BitMexHttp(api_key="euYaAVNoDkTOnuJbIzdkbm2i", api_secret="0EuDEoejFvYVPdFk5QlzCJGYM_u-nV1vB1aIstsLi697h_Nd")
-    bm.get_orders()
+    # bm.get_orders()
     # bm.get_wallet()
+    # bm.order_new()
+    bm.order_cancel_all()
+    # bm.order_cancel_all()
     # bm.order_new(order_qty=-1, price=9801.0)
     # bm.order_amend(order_id="3a8d86ce-2402-693a-0aaa-9179b6df6c8d", price=9005.0)
     # bm.order_cancel(order_id="3a8d86ce-2402-693a-0aaa-9179b6df6c8d")
