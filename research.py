@@ -47,8 +47,8 @@ def get_abnormal_minute(start, end):
                 _base_key = 'more'
                 if data_1_minute['o'][_base_index] > data_1_minute['c'][_base_index]:
                     _base_key = 'less'
-                value_trigger_more = value_h * 1.02
-                value_trigger_less = value_h * 0.96
+                value_trigger_more = value_h * 1.01
+                value_trigger_less = value_h * 0.99
                 for _index in range(_base_index, len(data_1_minute['t'])):
                     if data_1_minute['h'][_index] >= value_trigger_more:
                         oc_dict[_base_key]['more'] += 1
@@ -78,4 +78,4 @@ def get_abnormal_minute(start, end):
 
 if __name__ == '__main__':
     # plot_data()
-    get_abnormal_minute('2018-02-15', '2018-02-15')
+    get_abnormal_minute('2018-02-15', '2018-02-24')

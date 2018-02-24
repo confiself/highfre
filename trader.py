@@ -2,7 +2,7 @@
 import bitmex_etc
 from model import Model
 import logging
-
+from trade_conf import TradeConf
 _logger = logging.getLogger(__name__)
 
 
@@ -10,10 +10,11 @@ class Trader:
     """
     1 盈利时让利润飞起来，这种机制不过难以实现
     """
-    def __init__(self, side):
+    def __init__(self, side, trade_env):
         self.current_order = None
-        self.etc_http = bitmex_etc.BitMexHttp(api_key="euYaAVNoDkTOnuJbIzdkbm2i",
-                                              api_secret="0EuDEoejFvYVPdFk5QlzCJGYM_u-nV1vB1aIstsLi697h_Nd")
+        trade_conf = TradeConf(trade_env)
+        self.etc_http = bitmex_etc.BitMexHttp(api_key=trade_conf.api_key,
+                                              api_secret=trade_conf.api_secret)
         self.model = Model()
         self.suggest = None
         self.is_pending = False
@@ -122,5 +123,5 @@ class Trader:
 
 
 if __name__ == '__main__':
-    trader = Trader('Sell')
+    trader = Trader('Sell','test')
     trader.trade()

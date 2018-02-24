@@ -6,6 +6,7 @@ import logging
 
 from trader import Trader
 import sys
+import getopt
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
@@ -15,8 +16,8 @@ logging.basicConfig(level=logging.INFO,
 _logger = logging.getLogger(__name__)
 
 
-def main_loop(_side):
-    trader = Trader(_side)
+def main_loop(_side, _trade_env):
+    trader = Trader(_side, _trade_env)
 
     try:
         while True:
@@ -33,6 +34,12 @@ def main_loop(_side):
 
 if __name__ == '__main__':
     side = 'Sell'
-    if len(sys.argv) > 1 and sys.argv[1] == 'Buy':
-        side = 'Buy'
-    main_loop(side)
+    trade_env = "test"
+    opts, _ = getopt.getopt(sys.argv[1:], "s:e:")
+    for opt, value in opts:
+        if opt == '-s' and value in ['Sell', 'Buy']:
+            side = value
+        if opt == '-e' and value in ['test', 'product']:
+            trade_env = value
+    _logger.info(side, trade_env)
+    main_loop(side, trade_env)
