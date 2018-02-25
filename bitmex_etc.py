@@ -107,12 +107,12 @@ class BitMexHttp(object):
 
     def get_order_status(self):
         try:
-            response = self.client.Order.Order_getOrders(symbol=self.symbol, count=5, filter='{"open": true}', reverse=True).result()
+            response = self.client.Order.Order_getOrders(symbol=self.symbol, count=3, filter='{"open": true}', reverse=True).result()
             if response and len(response) > 0:
                 _logger.info(response[0][0])
                 return response[0][0]['ordStatus']
-        except:
-            _logger.error('net error')
+        except Exception as e:
+            _logger.error('net error:' + str(e))
         return
 
     def get_execution_status(self):
