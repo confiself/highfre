@@ -48,7 +48,11 @@ class Trader:
             self.is_pending = True
         else:
             self.is_pending = False
-            self._set_current_order(None)
+            if self.current_order:
+                open_order_status = self.etc_http.get_order_status()
+                if open_order_status and open_order_status != 'New':
+                    _logger.info('set current order none')
+                    self._set_current_order(None)
             _logger.info("is not pending")
 
         # 在已经有订单状态下判断是否需要止损

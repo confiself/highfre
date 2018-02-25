@@ -105,6 +105,25 @@ class BitMexHttp(object):
         # 'simpleLeavesQty': 0.0489
         print(resopnse)
 
+    def get_order_status(self):
+        try:
+            response = self.client.Order.Order_getOrders(symbol=self.symbol, count=5, filter='{"open": true}', reverse=True).result()
+            if response and len(response) > 0:
+                _logger.info(response[0][0])
+                return response[0][0]['ordStatus']
+        except:
+            _logger.error('net error')
+        return
+
+    def get_execution_status(self):
+        try:
+            response = self.client.Execution.Execution_get(symbol=self.symbol, count=2, reverse=True).result()
+            if response and len(response) > 0:
+                print(response[0])
+        except:
+            _logger.error('net error')
+        return None
+
     def get_wallet(self):
 
         # 'account': 269141,
@@ -121,7 +140,12 @@ class BitMexHttp(object):
         try:
             response = self.client.User.User_getWalletHistory().result()
             if response and len(response) > 0 and len(response) > 0 and 'amount' in response[0][0]:
-                return response[0][0]
+                result = response[0][0]
+                if 'Pending' in str(response[0]):
+                    if result['transactStatus'] != 'Pending':
+                        _logger.error('Pending seq error')
+                    result['transactStatus'] = 'Pending'
+                return result
         except:
             _logger.error('net error')
         return None
@@ -236,9 +260,11 @@ if __name__ == '__main__':
     # bitmex_ws.run()
     bm = BitMexHttp(api_key="euYaAVNoDkTOnuJbIzdkbm2i", api_secret="0EuDEoejFvYVPdFk5QlzCJGYM_u-nV1vB1aIstsLi697h_Nd")
     # bm.get_orders()
-    # bm.get_wallet()
+    print(bm.get_wallet())
+    # print(bm.get_order_status())
+    # bm.get_execution_status()
     # bm.order_new()
-    bm.order_cancel_all()
+    # bm.order_cancel_all()
     # bm.order_cancel_all()
     # bm.order_new(order_qty=-1, price=9801.0)
     # bm.order_amend(order_id="3a8d86ce-2402-693a-0aaa-9179b6df6c8d", price=9005.0)
