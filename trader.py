@@ -95,6 +95,7 @@ class Trader:
                 (sell_side == 'Sell' and real_time_info['bidPrice'] < sell_price):
             _logger.info("force stop loss ...")
             self.etc_http.make_stop_loss_order(side=sell_side)
+            self.etc_http.order_cancel_all()
             return True
         return False
 
