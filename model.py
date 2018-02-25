@@ -54,6 +54,14 @@ class Model(object):
             return None
         return self.get_chance()
 
+    def filter_chance(self):
+        """
+        1 根据成交量，前一小时的交易曲线，k线过滤，减少误判带来的损失（市价提交相当于30%损失）
+        2 评测1.02成交的比率
+        :return:
+        """
+        pass
+
 if __name__ == '__main__':
     model = Model()
     model.evaluate()

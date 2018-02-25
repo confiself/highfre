@@ -29,7 +29,7 @@ class Trader:
 
     @staticmethod
     def get_stop_loss_price(side, price):
-        price_dict = {'Buy': 0.98, 'Sell': 1.02}
+        price_dict = {'Buy': 0.99, 'Sell': 1.01}
         return int(price_dict[side] * price)
 
     @staticmethod
@@ -95,7 +95,7 @@ class Trader:
                 (sell_side == 'Sell' and real_time_info['bidPrice'] < sell_price):
             _logger.info("force stop loss ...")
             self.etc_http.make_stop_loss_order(side=sell_side)
-            self.etc_http.order_cancel_all()
+            # self.etc_http.order_cancel_all()
             return True
         return False
 
