@@ -78,4 +78,4 @@ def get_abnormal_minute(start, end):
 
 if __name__ == '__main__':
     # plot_data()
-    get_abnormal_minute('2018-02-15', '2018-02-24')
+    get_abnormal_minute('2018-02-20', '2018-02-24')

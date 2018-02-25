@@ -26,14 +26,18 @@ class Model(object):
 
     def get_chance(self):
         _logger.info('start get chance')
-        average = np.mean(self.data['v'][-2-TIME_INTERVAL:-2])
-        max_value = max(self.data['v'][-2-TIME_INTERVAL:-2])
-        current_v = self.data['v'][-2]
-        _logger.info('current_v,average,max_value' + str(current_v)+',' + str(average) + ',' + str(max_value))
+        average = np.mean(self.data['v'][-1 - TIME_INTERVAL:-1])
+        max_value = max(self.data['v'][-1 - TIME_INTERVAL:-1])
+        current_v = self.data['v'][-1]
+        _logger.info('current_v,average,max_value' + str(current_v) + ',' + str(average) + ',' + str(max_value))
         if current_v > 2 * average and max_value < current_v * MAX_RATIO:
-            _logger.warning('get chance')
-            return True
-        return None
+            if self.has_condition():
+                _logger.warning('get chance')
+                return True
+            else:
+                _logger.warning('get chance but is more')
+                return False
+        return False
 
     def evaluate(self):
         _logger.info('start evaluate')
@@ -54,19 +58,17 @@ class Model(object):
             return None
         return self.get_chance()
 
-    def filter_chance(self):
+    def has_condition(self):
         """
         1 根据成交量，前一小时的交易曲线，k线过滤，减少误判带来的损失（市价提交相当于30%损失）
         2 评测1.02成交的比率
         :return:
         """
-        pass
+        if self.data['o'][-1] - self.data['c'][-1] > 50:
+            return True
+        return False
+
 
 if __name__ == '__main__':
     model = Model()
     model.evaluate()
-
-
-
-
-
