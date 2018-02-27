@@ -86,9 +86,9 @@ class Model(object):
                     value_h_l = self.data['l'][_base_index]
                 if _side == 'Buy':
                     value_trigger_more = value_h_l * 1.01
-                    value_trigger_less = value_h_l * 0.98
+                    value_trigger_less = value_h_l * 0.99
                 else:
-                    value_trigger_more = value_h_l * 1.02
+                    value_trigger_more = value_h_l * 1.01
                     value_trigger_less = value_h_l * 0.99
                 for _index in range(_base_index, len(self.data['t'])):
 

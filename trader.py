@@ -3,7 +3,33 @@ import bitmex_etc
 from model import Model
 import logging
 from trade_conf import TradeConf
+import signal
+
 _logger = logging.getLogger(__name__)
+
+
+class TimeOutException(Exception):
+    pass
+
+
+def set_time_out(num):
+    def wrap(func):
+        def handle(signum, frame):
+            raise TimeOutException("运行超时！")
+
+        def process(*args, **kwargs):
+            try:
+                signal.signal(signal.SIGALRM, handle)
+                signal.alarm(num)  # 开启闹钟信号
+                rs = func(*args, **kwargs)
+                signal.alarm(0)  # 关闭闹钟信号
+                return rs
+            except TimeOutException as e:
+                print(e)
+
+        return process
+
+    return wrap
 
 
 class Trader:
@@ -27,7 +53,7 @@ class Trader:
 
     @staticmethod
     def get_stop_loss_price(side, price):
-        price_dict = {'Buy': 0.98, 'Sell': 1.02}
+        price_dict = {'Buy': 0.99, 'Sell': 1.01}
         return int(price_dict[side] * price)
 
     @staticmethod
@@ -35,6 +61,7 @@ class Trader:
         price_dict = {'Buy': 1.01, 'Sell': 0.99}
         return int(price_dict[side] * price)
 
+    @set_time_out(60)
     def trade(self):
         _logger.info("enter trade process ...")
         self.wallet_info = self.etc_http.get_wallet()
