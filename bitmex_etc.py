@@ -108,12 +108,15 @@ class BitMexHttp(object):
     def get_order_status(self):
         try:
             response = self.client.Order.Order_getOrders(symbol=self.symbol, count=1, filter='{"open": true}', reverse=True).result()
-            if response and response[1].status_code == 200 and len(response[0]) > 0:
-                _logger.info(response[0][0])
-                return response[0][0]['ordStatus']
+            if response and response[1].status_code == 200:
+                if len(response[0]) > 0 and 'ordStatus' in response[0][0]:
+                    _logger.info(response[0][0])
+                    return response[0][0]['ordStatus']
+                else:
+                    return 'closed'
         except Exception as e:
             _logger.error('net error:' + str(e))
-        return
+        return None
 
     def get_execution_status(self):
         try:
@@ -163,8 +166,8 @@ class BitMexHttp(object):
             response = self.client.Order.Order_cancelAll().result()
             if response and response[1].status_code == 200:
                 return True
-        except:
-            _logger.error('net error')
+        except Exception as e:
+            _logger.error('net error' + str(e))
         return False
 
     def instrument_get(self):
@@ -180,8 +183,8 @@ class BitMexHttp(object):
                                                    ordType='Market').result()
             if response and len(response) > 0 and 'orderID' in response[0]:
                 return response[0]
-        except:
-            _logger.error('net error')
+        except Exception as e:
+            _logger.error('net error' + str(e))
         return None
 
     def make_stop_loss_order(self, side):
@@ -193,8 +196,8 @@ class BitMexHttp(object):
                                                    ).result()
             if response and len(response) > 0:
                 return response[0]
-        except:
-            _logger.error('net error')
+        except Exception as e:
+            _logger.error('net error' + str(e))
         return None
 
     def make_stop_profit_order(self, side, price):
@@ -206,8 +209,8 @@ class BitMexHttp(object):
                                                    stopPx=price).result()
             if response and len(response) > 0:
                 return response
-        except:
-            _logger.error('net error')
+        except Exception as e:
+            _logger.error('net error' + str(e))
         return False
 
 

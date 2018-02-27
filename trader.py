@@ -10,7 +10,7 @@ class Trader:
     """
     1 盈利时让利润飞起来，这种机制不过难以实现
     """
-    def __init__(self, side, trade_env):
+    def __init__(self, trade_env):
         self.current_order = None
         trade_conf = TradeConf(trade_env)
         self.etc_http = bitmex_etc.BitMexHttp(api_key=trade_conf.api_key,
@@ -19,8 +19,6 @@ class Trader:
         self.suggest = None
         self.is_pending = False
         self.wallet_info = None
-        self.side = side
-        _logger.info(self.side)
 
     @staticmethod
     def get_opposite_side(side):
@@ -110,7 +108,8 @@ class Trader:
         _logger.info('enter create order process')
         if self.is_pending or self.current_order:
             return None
-        if not self.model.evaluate():
+        _side = self.model.evaluate()
+        if not _side:
             _logger.info('no chance')
             return
         _logger.info('model evaluate true')
@@ -118,8 +117,8 @@ class Trader:
         if not self.etc_http.order_cancel_all():
             return None
         _logger.info("found chance and start make order...")
-        order = self.etc_http.make_market_order(side=self.side,
-                                                simple_order_qty=self.wallet_info['walletBalance'] * 8 * 1e-8)
+        order = self.etc_http.make_market_order(side=_side,
+                                                simple_order_qty=self.wallet_info['walletBalance'] * 9 * 1e-8)
         if order:
             _logger.info("create order success")
             _logger.info(order)
@@ -128,5 +127,5 @@ class Trader:
 
 
 if __name__ == '__main__':
-    trader = Trader('Sell','test')
+    trader = Trader('test')
     trader.trade()

@@ -16,8 +16,8 @@ logging.basicConfig(level=logging.INFO,
 _logger = logging.getLogger(__name__)
 
 
-def main_loop(_side, _trade_env):
-    trader = Trader(_side, _trade_env)
+def main_loop(_trade_env):
+    trader = Trader(_trade_env)
 
     try:
         while True:
@@ -33,13 +33,10 @@ def main_loop(_side, _trade_env):
 
 
 if __name__ == '__main__':
-    side = 'Sell'
     trade_env = "test"
-    opts, _ = getopt.getopt(sys.argv[1:], "s:e:")
+    opts, _ = getopt.getopt(sys.argv[1:], "e:")
     for opt, value in opts:
-        if opt == '-s' and value in ['Sell', 'Buy']:
-            side = value
         if opt == '-e' and value in ['test', 'product']:
             trade_env = value
-    _logger.info(side, trade_env)
-    main_loop(side, trade_env)
+    _logger.info(trade_env)
+    main_loop(trade_env)
