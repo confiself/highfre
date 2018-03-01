@@ -135,8 +135,8 @@ class Trader:
         _logger.info('enter create order process')
         if self.is_pending or self.current_order:
             return None
-        _side = self.model.evaluate()
-        if not _side:
+        trade_suggest = self.model.evaluate()
+        if not trade_suggest:
             _logger.info('no chance')
             return
         _logger.info('model evaluate true')
@@ -144,7 +144,8 @@ class Trader:
         if not self.etc_http.order_cancel_all():
             return None
         _logger.info("found chance and start make order...")
-        order = self.etc_http.make_market_order(side=_side,
+        order = self.etc_http.make_market_order(side=trade_suggest['side'],
+                                                price=trade_suggest['price'],
                                                 simple_order_qty=self.wallet_info['walletBalance'] * 9 * 1e-8)
         if order:
             _logger.info("create order success")

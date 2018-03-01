@@ -7,6 +7,7 @@ import logging
 from trader import Trader
 import sys
 import getopt
+import traceback
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
@@ -28,6 +29,7 @@ def main_loop(_trade_env):
     except Exception as e:
         print(e)
         _logger.error(e)
+        _logger.error(traceback.format_exc())
     finally:
         pass
 

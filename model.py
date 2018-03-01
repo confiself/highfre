@@ -56,8 +56,9 @@ class Model(object):
         price_diff = self.data['o'][current_index] - self.data['c'][current_index]
         if abs(price_diff) > 60:
             side = 'Buy' if price_diff > 0 else 'Sell'  # 推荐交易方式，放量下跌买，否则卖
-            _logger.info('get chance ' + side)
-            return side
+            price = int((self.data['o'][current_index] + self.data['c'][current_index]) / 2)
+            _logger.info('get chance ' + side + ',' + str(price))
+            return {'side': side, 'price': price}
         return None
 
     def test(self, start, end):

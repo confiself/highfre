@@ -175,12 +175,22 @@ class BitMexHttp(object):
         # reverse = True
         self.client.Instrument.Instrument_get(filter=json.dumps({'rootSymbol': 'XBT'})).result()
 
-    def make_market_order(self, side, simple_order_qty):
+    def make_market_order(self, side, simple_order_qty, price):
+        """
+        orderID
+        leavesQty
+        ordStatus New
+        :param side:
+        :param simple_order_qty:
+        :param price:
+        :return:
+        """
         try:
             response = self.client.Order.Order_new(symbol=self.symbol,
                                                    side=side,
+                                                   price=price,
                                                    simpleOrderQty=simple_order_qty,
-                                                   ordType='Market').result()
+                                                   ordType='Limit').result()
             if response and len(response) > 0 and 'orderID' in response[0]:
                 return response[0]
         except Exception as e:
@@ -204,9 +214,10 @@ class BitMexHttp(object):
         try:
             response = self.client.Order.Order_new(symbol=self.symbol,
                                                    side=side,
-                                                   ordType='MarketIfTouched',
+                                                   ordType='LimitIfTouched',
                                                    execInst='Close',
-                                                   stopPx=price).result()
+                                                   stopPx=price,
+                                                   price=price).result()
             if response and len(response) > 0:
                 return response
         except Exception as e:
@@ -259,12 +270,12 @@ class BitMexWS(object):
 if __name__ == '__main__':
     # bitmex_ws = BitMexWS(api_key="euYaAVNoDkTOnuJbIzdkbm2i",
     #                      api_secret="0EuDEoejFvYVPdFk5QlzCJGYM_u-nV1vB1aIstsLi697h_Nd")
-    # bitmex_ws = BitMexWS()
-    # bitmex_ws.run()
-    bm = BitMexHttp(api_key="euYaAVNoDkTOnuJbIzdkbm2i", api_secret="0EuDEoejFvYVPdFk5QlzCJGYM_u-nV1vB1aIstsLi697h_Nd")
+    bitmex_ws = BitMexWS()
+    bitmex_ws.run()
+    # bm = BitMexHttp(api_key="euYaAVNoDkTOnuJbIzdkbm2i", api_secret="0EuDEoejFvYVPdFk5QlzCJGYM_u-nV1vB1aIstsLi697h_Nd")
     # bm.get_orders()
     # print(bm.get_wallet())
-    print(bm.get_order_status())
+    # print(bm.get_order_status())
     # bm.get_execution_status()
     # bm.order_new()
     # bm.order_cancel_all()
