@@ -133,6 +133,7 @@ class MyBitMEXWebsocket:
             self.logger.error("Couldn't connect to WS! Exiting.")
             self.exit()
             raise websocket.WebSocketTimeoutException('Couldn\'t connect to WS! Exiting.')
+        self.exited = False
 
     def __get_auth(self):
         '''Return auth headers. Will use API Keys if present in settings.'''
@@ -248,6 +249,7 @@ class MyBitMEXWebsocket:
         '''Called on fatal websocket errors. We exit on these.'''
         if not self.exited:
             self.logger.error("Error : %s" % error)
+            self.exit()
             raise websocket.WebSocketException(error)
 
     def __on_open(self, ws):
@@ -282,10 +284,10 @@ if __name__ == '__main__':
                          api_secret=None)
 
     while True:
-        if not my_ws.ws.sock.connected:
+        if my_ws.exited:
             my_ws.logger.error('reconnected')
             my_ws.connect(my_ws.ws_url, my_ws.symbol)
-        sleep(10)
+        sleep(5)
     # logger = logging.getLogger(__name__)
     # logger.info("Ticker: %s" % ws.get_instrument())
     # print(ws.get_instrument())

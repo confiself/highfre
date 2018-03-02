@@ -45,6 +45,7 @@ class Trader:
         self.suggest = None
         self.is_pending = False
         self.wallet_info = None
+        self.stop_loss_order = None
 
     @staticmethod
     def get_opposite_side(side):
@@ -74,10 +75,12 @@ class Trader:
         else:
             self.is_pending = False
             if self.current_order:
-                open_order_status = self.etc_http.get_order_status()
-                if open_order_status and open_order_status != 'New':
+                my_position = self.etc_http.get_position()
+                if my_position and len(my_position) > 0 and my_position[0]['currentQty'] == 0:
+                    self.etc_http.order_cancel_all()
                     _logger.info('set current order none')
                     self._set_current_order(None)
+
             _logger.info("is not pending")
 
         # 在已经有订单状态下判断是否需要止损
@@ -119,8 +122,9 @@ class Trader:
         if (sell_side == 'Buy' and real_time_info['bidPrice'] > sell_price) or \
                 (sell_side == 'Sell' and real_time_info['bidPrice'] < sell_price):
             _logger.info("force stop loss ...")
-            self.etc_http.make_stop_loss_order(side=sell_side)
-            # self.etc_http.order_cancel_all()
+            if self.stop_loss_order:
+                self.etc_http.order_cancel(self.stop_loss_order['orderID'])
+            self.stop_loss_order = self.etc_http.make_stop_loss_order(side=sell_side, price=real_time_info['bidPrice'])
             return True
         return False
 
@@ -153,7 +157,21 @@ class Trader:
             self._set_current_order(order)
         return True
 
+    def test(self):
+        self.stop_loss_order = self.etc_http.make_stop_loss_order(side='Sell', price=10779)
+        if self.stop_loss_order:
+            self.etc_http.order_cancel(self.stop_loss_order['orderID'])
+            #
+
 
 if __name__ == '__main__':
     trader = Trader('test')
-    trader.trade()
+    position = trader.etc_http.get_position()
+    print(position)
+    print(len(position))
+
+    # trader.trade()
+    # trader.test()
+    # while True:
+    #     open_order_status = trader.etc_http.get_order_status()
+    #     time.sleep(5)
