@@ -54,12 +54,12 @@ class Trader:
 
     @staticmethod
     def get_stop_loss_price(side, price):
-        price_dict = {'Buy': 0.98, 'Sell': 1.02}
+        price_dict = {'Buy': 0.99, 'Sell': 1.01}
         return int(price_dict[side] * price)
 
     @staticmethod
     def get_stop_profit_price(side, price):
-        price_dict = {'Buy': 1.01, 'Sell': 0.99}
+        price_dict = {'Buy': 1.005, 'Sell': 0.995}
         return int(price_dict[side] * price)
 
     @set_time_out(60)
@@ -113,6 +113,8 @@ class Trader:
         if not self.is_pending or not self.current_order:
             return False
         real_time_info = self.etc_http.quote_get()
+        if not real_time_info:
+            return False
         _logger.info('quote info:' + str(real_time_info))
         sell_side = Trader.get_opposite_side(self.current_order['side'])
         sell_price = Trader.get_stop_loss_price(side=self.current_order['side'],

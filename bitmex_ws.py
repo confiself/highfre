@@ -163,7 +163,7 @@ class MyBitMEXWebsocket:
         # You can sub to orderBookL2 for all levels, or orderBook10 for top 10 levels & save bandwidth
         # symbolSubs = ["execution", "instrument", "order", "orderBookL2", "position", "quote", "trade"]
         # symbolSubs = ["instrument", "quote", "trade"]
-        symbolSubs = ["order", "position", "execution"]
+        symbolSubs = ["order", "position", "execution", "trade", "quote", "instrument"]
         # genericSubs = ["margin"]
 
         subscriptions = [sub + ':' + self.symbol for sub in symbolSubs]
@@ -182,9 +182,8 @@ class MyBitMEXWebsocket:
 
     def __wait_for_symbol(self, symbol):
         '''On subscribe, this data will come down. Wait for it.'''
-        # while not {"instrument", "quote", "trade"} <= set(self.data):
-        #     sleep(0.1)
-        pass
+        while not {"instrument", "quote", "trade"} <= set(self.data):
+            sleep(0.1)
 
     def __send_command(self, command, args=None):
         '''Send a raw command.'''
@@ -264,6 +263,8 @@ class MyBitMEXWebsocket:
     def __on_close(self, ws):
         '''Called on websocket close.'''
         self.logger.info('Websocket Closed')
+        if not self.exited:
+            self.exit()
 
 
 # Utility method for finding an item in the store.

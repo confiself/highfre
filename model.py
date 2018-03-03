@@ -54,7 +54,7 @@ class Model(object):
         :return:
         """
         price_diff = self.data['o'][current_index] - self.data['c'][current_index]
-        if abs(price_diff) > 60:
+        if abs(price_diff) > 30:
             side = 'Buy' if price_diff > 0 else 'Sell'  # 推荐交易方式，放量下跌买，否则卖
             price = int((self.data['o'][current_index] + self.data['c'][current_index]) / 2)
             _logger.info('get chance ' + side + ',' + str(price))
