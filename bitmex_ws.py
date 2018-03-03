@@ -6,7 +6,10 @@ import json
 import logging
 import urllib
 import math
-# from util.api_key import generate_nonce, generate_signature
+from util.api_key import generate_nonce, generate_signature
+import sys
+import getopt
+from trade_conf import TradeConf
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
@@ -137,20 +140,19 @@ class MyBitMEXWebsocket:
 
     def __get_auth(self):
         '''Return auth headers. Will use API Keys if present in settings.'''
-        # if self.api_key:
-        #     self.logger.info("Authenticating with API Key.")
-        #     # To auth to the WS using an API key, we generate a signature of a nonce and
-        #     # the WS API endpoint.
-        #     nonce = generate_nonce()
-        #     return [
-        #         "api-nonce: " + str(nonce),
-        #         "api-signature: " + generate_signature(self.api_secret, 'GET', '/realtime', nonce, ''),
-        #         "api-key:" + self.api_key
-        #     ]
-        # else:
-        #     self.logger.info("Not authenticating.")
-        #     return []
-        return []
+        if self.api_key:
+            self.logger.info("Authenticating with API Key.")
+            # To auth to the WS using an API key, we generate a signature of a nonce and
+            # the WS API endpoint.
+            nonce = generate_nonce()
+            return [
+                "api-nonce: " + str(nonce),
+                "api-signature: " + generate_signature(self.api_secret, 'GET', '/realtime', nonce, ''),
+                "api-key:" + self.api_key
+            ]
+        else:
+            self.logger.info("Not authenticating.")
+            return []
 
     def __get_url(self):
         '''
@@ -160,7 +162,8 @@ class MyBitMEXWebsocket:
 
         # You can sub to orderBookL2 for all levels, or orderBook10 for top 10 levels & save bandwidth
         # symbolSubs = ["execution", "instrument", "order", "orderBookL2", "position", "quote", "trade"]
-        symbolSubs = ["instrument", "quote", "trade"]
+        # symbolSubs = ["instrument", "quote", "trade"]
+        symbolSubs = ["order", "position", "execution"]
         # genericSubs = ["margin"]
 
         subscriptions = [sub + ':' + self.symbol for sub in symbolSubs]
@@ -174,13 +177,14 @@ class MyBitMEXWebsocket:
     def __wait_for_account(self):
         '''On subscribe, this data will come down. Wait for it.'''
         # Wait for the keys to show up from the ws
-        while not {'margin', 'position', 'order', 'orderBookL2'} <= set(self.data):
+        while not {'position', 'order', "execution"} <= set(self.data):
             sleep(0.1)
 
     def __wait_for_symbol(self, symbol):
         '''On subscribe, this data will come down. Wait for it.'''
-        while not {'instrument', 'trade', 'quote'} <= set(self.data):
-            sleep(0.1)
+        # while not {"instrument", "quote", "trade"} <= set(self.data):
+        #     sleep(0.1)
+        pass
 
     def __send_command(self, command, args=None):
         '''Send a raw command.'''
@@ -220,7 +224,8 @@ class MyBitMEXWebsocket:
 
                     # Limit the max length of the table to avoid excessive memory usage.
                     # Don't trim orders because we'll lose valuable state if we do.
-                    if table not in ['order', 'orderBookL2'] and len(self.data[table]) > MyBitMEXWebsocket.MAX_TABLE_LEN:
+                    if table not in ['order', 'orderBookL2'] and len(
+                            self.data[table]) > MyBitMEXWebsocket.MAX_TABLE_LEN:
                         self.data[table] = self.data[table][int(MyBitMEXWebsocket.MAX_TABLE_LEN / 2):]
 
                 elif action == 'update':
@@ -277,27 +282,34 @@ def findItemByKeys(keys, table, matchData):
         if matched:
             return item
 
+
 if __name__ == '__main__':
+    trade_env = "test"
+    opts, _ = getopt.getopt(sys.argv[1:], "e:")
+    for opt, value in opts:
+        if opt == '-e' and value in ['test', 'product']:
+            trade_env = value
+    trade_conf = TradeConf(trade_env)
     my_ws = MyBitMEXWebsocket(endpoint="https://www.bitmex.com/api/v1",
-                         symbol="XBTUSD",
-                         api_key=None,
-                         api_secret=None)
+                              symbol="XBTUSD",
+                              api_key=trade_conf.api_key,
+                              api_secret=trade_conf.api_secret)
 
     while True:
         if my_ws.exited:
             my_ws.logger.error('reconnected')
             my_ws.connect(my_ws.ws_url, my_ws.symbol)
         sleep(5)
-    # logger = logging.getLogger(__name__)
-    # logger.info("Ticker: %s" % ws.get_instrument())
-    # print(ws.get_instrument())
-    # # Run forever
-    # while ws.ws.sock.connected:
-    #     logger.info("Ticker: %s" % ws.get_ticker())
-    #     print(ws.get_ticker())
-    #     if ws.api_key:
-    #         logger.info("Funds: %s" % ws.funds())
-    #     logger.info("Market Depth: %s" % ws.market_depth())
-    #     logger.info("Recent Trades: %s\n\n" % ws.recent_trades())
-    #     print(ws.recent_trades())
-    #     sleep(10)
+        # logger = logging.getLogger(__name__)
+        # logger.info("Ticker: %s" % ws.get_instrument())
+        # print(ws.get_instrument())
+        # # Run forever
+        # while ws.ws.sock.connected:
+        #     logger.info("Ticker: %s" % ws.get_ticker())
+        #     print(ws.get_ticker())
+        #     if ws.api_key:
+        #         logger.info("Funds: %s" % ws.funds())
+        #     logger.info("Market Depth: %s" % ws.market_depth())
+        #     logger.info("Recent Trades: %s\n\n" % ws.recent_trades())
+        #     print(ws.recent_trades())
+        #     sleep(10)

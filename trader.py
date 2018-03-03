@@ -54,7 +54,7 @@ class Trader:
 
     @staticmethod
     def get_stop_loss_price(side, price):
-        price_dict = {'Buy': 0.99, 'Sell': 1.01}
+        price_dict = {'Buy': 0.98, 'Sell': 1.02}
         return int(price_dict[side] * price)
 
     @staticmethod
