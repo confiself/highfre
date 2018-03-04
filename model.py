@@ -118,4 +118,4 @@ class Model(object):
 if __name__ == '__main__':
     model = Model()
     # model.evaluate()
-    model.test('2018-02-25', '2018-03-03')
+    model.test('2018-03-01', '2018-03-01')
