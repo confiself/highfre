@@ -24,7 +24,7 @@ class Model(object):
         max_value = max(self.data['v'][current_index - TIME_INTERVAL:current_index])
         current_v = self.data['v'][current_index]
         _logger.info('current_v,average,max_value' + str(current_v) + ',' + str(average) + ',' + str(max_value))
-        if current_v > 2 * average and max_value < current_v * MAX_RATIO:
+        if current_v > 1.5 * average and max_value < current_v * MAX_RATIO:
             return self.has_condition(current_index)
         return None
 
@@ -45,7 +45,7 @@ class Model(object):
         if not self.data:
             _logger.info('not data')
             return None
-        return self.get_chance(-2)  # -1 表示当前，－2为前完整5分钟
+        return self.get_chance(-1)  # -1 表示当前，－2为前完整5分钟
 
     def has_condition(self, current_index):
         """
@@ -54,8 +54,8 @@ class Model(object):
         :return:
         """
         price_diff = self.data['o'][current_index] - self.data['c'][current_index]
-        if abs(price_diff) > 30:
-            side = 'Buy' if price_diff > 0 else 'Sell'  # 推荐交易方式，放量下跌买，否则卖
+        if abs(price_diff) > 10:
+            side = 'Sell' if price_diff > 0 else 'Buy'  # 推荐交易方式，跟涨或跟跌
             price = int((self.data['o'][current_index] + self.data['c'][current_index]) / 2)
             _logger.info('get chance ' + side + ',' + str(price))
             return {'side': side, 'price': price}
@@ -80,26 +80,23 @@ class Model(object):
             file_path = os.path.join(_root_path, _date)
 
             def _get_first_trigger(_base_index, _side):
-                value_h_l = self.data['h'][_base_index]
                 _base_key = 'more'
                 if self.data['o'][_base_index] > self.data['c'][_base_index]:
                     _base_key = 'less'
                     value_h_l = self.data['l'][_base_index]
-                if _side == 'Buy':
-                    value_trigger_more = value_h_l * 1.01
-                    value_trigger_less = value_h_l * 0.99
-                else:
-                    value_trigger_more = value_h_l * 1.01
-                    value_trigger_less = value_h_l * 0.99
-                for _index in range(_base_index, len(self.data['t'])):
-
-                    if self.data['l'][_index] <= value_trigger_less:
+                start_value = int((self.data['o'][_base_index] + self.data['c'][_base_index]) / 2)
+                # start_value = self.data['o'][_base_index]
+                trigger = False
+                for _index in range(_base_index + 1, len(self.data['t'])):
+                    if self.data['l'][_index] <= start_value * 0.99:
                         oc_dict[_base_key]['less'] += 1
-                        return _base_key, 'less', self.data['l'][_index], self.data['v'][_base_index]
-                    if self.data['h'][_index] >= value_trigger_more:
+                        trigger = True
+                    if self.data['h'][_index] >= start_value * 1.01:
                         oc_dict[_base_key]['more'] += 1
-                        return _base_key, 'more', self.data['h'][_index], self.data['v'][_base_index]
-                return None, None, None, None
+                        trigger = True
+                    if trigger:
+                        return
+                return
 
             with open(file_path) as f:
                 lines = f.readlines()
@@ -113,8 +110,7 @@ class Model(object):
                     side = self.get_chance(i)
                     if side:
                         dt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.data['t'][i]))
-                        _, key, value, vol = _get_first_trigger(i, side)
-                        print('find it', self.data['t'][i], dt, _, key, self.data['l'][i], value, vol)
+                        _get_first_trigger(i, side)
 
             print(oc_dict)
 
@@ -122,4 +118,4 @@ class Model(object):
 if __name__ == '__main__':
     model = Model()
     # model.evaluate()
-    model.test('2018-02-01', '2018-02-25')
+    model.test('2018-02-25', '2018-03-03')

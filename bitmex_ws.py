@@ -298,8 +298,13 @@ if __name__ == '__main__':
 
     while True:
         if my_ws.exited:
-            my_ws.logger.error('reconnected')
-            my_ws.connect(my_ws.ws_url, my_ws.symbol)
+            try:
+                my_ws.logger.error('reconnected')
+                my_ws.connect(my_ws.ws_url, my_ws.symbol)
+            except Exception as e:
+                my_ws.logger.error("reconnected error:" + str(e))
+                sleep(100)
+
         sleep(5)
         # logger = logging.getLogger(__name__)
         # logger.info("Ticker: %s" % ws.get_instrument())

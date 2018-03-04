@@ -59,7 +59,7 @@ class Trader:
 
     @staticmethod
     def get_stop_profit_price(side, price):
-        price_dict = {'Buy': 1.005, 'Sell': 0.995}
+        price_dict = {'Buy': 1.01, 'Sell': 0.99}
         return int(price_dict[side] * price)
 
     @set_time_out(60)
@@ -149,9 +149,12 @@ class Trader:
 
         if not self.etc_http.order_cancel_all():
             return None
+        real_time_info = self.etc_http.quote_get()
+        if not real_time_info:
+            return False
         _logger.info("found chance and start make order...")
         order = self.etc_http.make_market_order(side=trade_suggest['side'],
-                                                price=trade_suggest['price'],
+                                                price=real_time_info['bidPrice'],
                                                 simple_order_qty=self.wallet_info['walletBalance'] * 9 * 1e-8)
         if order:
             _logger.info("create order success")

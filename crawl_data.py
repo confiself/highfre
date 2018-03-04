@@ -64,4 +64,4 @@ def get_data_by_day(start, end):
                     f.writelines(json.dumps(_data, ensure_ascii=False) + '\n')
 if __name__ == '__main__':
     # get_history()
-    get_data_by_day(start='2018-02-01', end='2018-02-24')
+    get_data_by_day(start='2018-02-01', end='2018-03-03')
