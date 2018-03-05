@@ -10,6 +10,7 @@ from util.api_key import generate_nonce, generate_signature
 import sys
 import getopt
 from trade_conf import TradeConf
+import time
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
@@ -185,7 +186,7 @@ class MyBitMEXWebsocket:
         while not {"instrument", "quote", "trade"} <= set(self.data):
             sleep(0.1)
 
-    def __send_command(self, command, args=None):
+    def send_command(self, command, args=None):
         '''Send a raw command.'''
         if args is None:
             args = []
@@ -295,8 +296,13 @@ if __name__ == '__main__':
                               symbol="XBTUSD",
                               api_key=trade_conf.api_key,
                               api_secret=trade_conf.api_secret)
-
+    _count = 0
     while True:
+        _count += 1
+        if _count == 10:
+            _count = 0
+            timestamp = float(time.time() * 1000)
+            my_ws.ws.send("primus::ping::%s" % timestamp)
         if my_ws.exited:
             try:
                 my_ws.logger.error('reconnected')

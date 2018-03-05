@@ -2,6 +2,7 @@ import websocket
 import hashlib
 import time
 import _thread
+import threading
 import logging
 api_key = ''
 secret_key = ""
@@ -146,8 +147,8 @@ class OKEXWebSocket(object):
         pass
         self.ws = None
         self.wst = None
-        # self.url = "wss://real.okex.com:10440/websocket/okexapi"
-        self.url = "wss://real.okcoin.com:10440/websocket/okcoinapi"
+        self.url = "wss://real.okex.com:10440/websocket/okexapi"
+        # self.url = "wss://real.okcoin.com:10440/websocket/okcoinapi"
         self.logger = logging.getLogger(__name__)
 
     def on_message(self, ws, message):
@@ -157,7 +158,11 @@ class OKEXWebSocket(object):
         # subscribe okcoin.com spot ticker
         self.logger.info("now open")
         # self.send("{'event':'addChannel','channel':'ok_sub_spotusd_btc_ticker','binary':'true'}")
-        self.ws.send("{'event':'addChannel','channel':'ok_sub_spot_btc_usdt_kline_1min'}");
+        # self.ws.send("{'event':'addChannel','channel':'ok_sub_spot_btc_usdt_kline_1min'}");
+        self.ws.send("{'event':'addChannel','channel':'ok_sub_spot_btc_usdt_deals'}")
+        self.ws.send("{'event':'addChannel','channel':'ok_sub_futureusd_btc_trade_this_week'}")
+        self.ws.send("{'event':'addChannel','channel':'ok_sub_futureusd_btc_index'}")
+        self.ws.send("{'event':'addChannel','channel':'ok_sub_spot_btc_usdt_ticker'}")
 
     def on_error(self, ws, error):
         self.logger.error('Error:' + error)
@@ -173,8 +178,8 @@ class OKEXWebSocket(object):
                                          on_error=self.on_error,
                                          on_close=self.on_close)
         self.ws.on_open = self.on_open
-        self.ws.run_forever()
-        self.wst = _thread.start_new_thread(self.ws.run_forever, ())
+        # self.ws.run_forever()
+        self.wst = threading.Thread(target=lambda: self.ws.run_forever())
         self.wst.daemon = True
         self.wst.start()
 
@@ -183,6 +188,10 @@ if __name__ == "__main__":
     okex_ws = OKEXWebSocket()
     okex_ws.start()
     while True:
-        print('ping...')
-        okex_ws.ws.send('{"event":"ping"}')
-        time.sleep(10)
+        time.sleep(100)
+        okex_ws.logger.info('ping...')
+        try:
+            okex_ws.ws.send('{"event":"ping"}')
+        except Exception as e:
+            okex_ws.logger.info('ping error:' + str(e))
+            pass
